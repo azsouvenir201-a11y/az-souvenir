@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .receipt-container.receipt-print-root {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .receipt-page {
+    display: flex !important;
+    flex-direction: column !important;
+    box-sizing: border-box !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    overflow: hidden !important;
+  }
+  .receipt-page:last-child {
+    page-break-after: avoid !important;
+    break-after: auto !important;
+  }
+  .receipt-sheet-footer {
+    margin-top: auto !important;
+    flex-shrink: 0 !important;
+  }
+  .receipt-sheet-tablewrap {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+}
+
+/* Desktop: admin receipt preview width (794px A4 + padding) */
+.receipt-modal {
+  width: min(900px, 95vw);
+  max-width: 95vw;
+}
+
+.receipt-print-root .receipt-print-table {
+  table-layout: fixed;
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer base {
+  :root {
+    /* Custom Color Palette */
+    --ink: #02111B;
+    --gunmetal: #3F4045;
+    --shadow-grey: #30292F;
+    --slate: #5D737E;
+    --off-white: #FCFCFC;
+
+    --background: 0 0% 99%;
+    --foreground: 200 82% 5.5%;
+    --card: 0 0% 99%;
+    --card-foreground: 200 82% 5.5%;
+    --popover: 0 0% 99%;
+    --popover-foreground: 200 82% 5.5%;
+    --primary: 200 82% 5.5%;
+    --primary-foreground: 0 0% 99%;
+    --secondary: 200 15% 43%;
+    --secondary-foreground: 0 0% 99%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 240 2% 26%;
+    --accent: 200 15% 43%;
+    --accent-foreground: 0 0% 99%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 200 82% 5.5% / 0.1;
+    --input: 200 82% 5.5% / 0.1;
+    --ring: 200 15% 43%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* Mobile-first responsive text sizes */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 641px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  button,
+  [role='button'],
+  a[role='button'] {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  main,
+  section,
+  article,
+  .container {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}

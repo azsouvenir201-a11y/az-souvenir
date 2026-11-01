@@ -1,0 +1,85 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
+import { useAuthStore } from '@/store/auth-store';
+import { useCartStore } from '@/store/cart-store';
+import { useFavoritesStore } from '@/store/favorites-store';
+import api from '@/lib/api';
+
+export default function AuthProvider({ children }: { children: React.ReactNode }) {
+  const setUser = useAuthStore((state) => state.setUser);
+  const setToken = useAuthStore((state) => state.setToken);
+  const user = useAuthStore((state) => state.user);
+  const setCartOwner = useCartStore((state) => state.setOwner);
+  const setFavoritesOwner = useFavoritesStore((state) => state.setOwner);
+  const hasInitialized = useRef(false);
+
+  useEffect(() => {
+    // Initialize auth on app load - only once
+    if (hasInitialized.current) return;
+    
+    const initializeAuth = async () => {
+      hasInitialized.current = true;
+      
+      const existingUser = useAuthStore.getState().user;
+      const existingToken = useAuthStore.getState().token;
+
+      let token = existingToken || localStorage.getItem('token');
+      // Cookie fallback — Safari ITP can clear localStorage
+      if (!token) {
+        const match = document.cookie.match(/(?:^|; )auth_token=([^;]*)/);
+        if (match) {
+          token = match[1];
+          localStorage.setItem('token', token); // Restore to localStorage
+        }
+      }
+
+      if (!token) {
+        if (existingUser) useAuthStore.getState().logout();
+        return;
+      }
+
+      if (existingToken && !localStorage.getItem('token')) {
+        localStorage.setItem('token', existingToken);
+      }
+
+      if (token) {
+        try {
+          const response = await api.get('/users/profile');
+          if (response.data.success && response.data.user) {
+            setToken(token);
+            setUser({
+              ...response.data.user,
+              id: response.data.user.id || response.data.user._id
+            });
+          }
+        } catch (error: any) {
+          const isTimeout = error.code === 'ECONNABORTED' || error.message?.includes('timeout');
+          if (isTimeout) {
+            // Temporary network timeout - keep local auth state
+            return;
+          }
+          const status = error?.response?.status;
+          const isAuthError = status === 401 || status === 403;
+          if (isAuthError) {
+            // Token is invalid/expired — clear stale auth state
+            useAuthStore.getState().logout();
+            return;
+          }
+          // For 5xx/network/cors glitches, keep current auth state.
+          console.error('Auth initialization skipped due to non-auth error:', error?.message || error);
+        }
+      }
+    };
+    initializeAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
+  useEffect(() => {
+    const ownerKey = user?.id ? `user:${user.id}` : 'guest';
+    setCartOwner(ownerKey);
+    setFavoritesOwner(ownerKey);
+  }, [user?.id, setCartOwner, setFavoritesOwner]);
+
+  return <>{children}</>;
+}
