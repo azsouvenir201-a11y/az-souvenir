@@ -318,8 +318,10 @@ export default function OrderReceipt({ order }: OrderReceiptProps) {
   }, []);
 
   const preset = PAPER_PRESETS[paperFormat];
-  const items = order.items || [];
-  const paddedPages = useMemo(() => pagesForReceipt(items, preset.rowsPerPage), [items, preset.rowsPerPage]);
+  const paddedPages = useMemo(
+    () => pagesForReceipt(order.items || [], preset.rowsPerPage),
+    [order.items, preset.rowsPerPage]
+  );
   const totalPages = paddedPages.length;
 
   const getOrderDeliveryAddress = () => {

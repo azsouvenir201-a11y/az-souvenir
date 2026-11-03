@@ -9,25 +9,6 @@ export const size = {
 export const contentType = 'image/png';
 
 export default async function Image() {
-  // #region agent log
-  fetch('http://127.0.0.1:7831/ingest/7040e2ae-5037-4640-adbd-f649ab17d3e4', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Debug-Session-Id': '9f8d20',
-    },
-    body: JSON.stringify({
-      sessionId: '9f8d20',
-      runId: 'initial',
-      hypothesisId: 'H5',
-      location: 'fd/app/opengraph-image.tsx:Image',
-      message: 'OpenGraph image generated for share preview',
-      data: { width: size.width, height: size.height },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
-  // #endregion
-
   return new ImageResponse(
     (
       <div

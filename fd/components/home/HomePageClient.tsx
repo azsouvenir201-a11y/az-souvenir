@@ -134,6 +134,10 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
     }
   };
 
+  // Observer callback always calls the latest loadMoreProducts without re-subscribing on every render
+  const loadMoreProductsRef = useRef(loadMoreProducts);
+  loadMoreProductsRef.current = loadMoreProducts;
+
   useEffect(() => {
     if (!hasMoreProducts) return;
     const target = loadMoreTriggerRef.current;
@@ -143,7 +147,7 @@ export default function HomePageClient({ initialData }: HomePageClientProps) {
       (entries) => {
         const first = entries[0];
         if (first?.isIntersecting) {
-          loadMoreProducts();
+          loadMoreProductsRef.current();
         }
       },
       { rootMargin: '300px 0px' }
