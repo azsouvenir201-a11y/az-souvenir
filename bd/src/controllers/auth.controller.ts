@@ -44,17 +44,10 @@ const checkIfAuthenticated = async (req: Request): Promise<IUser | null> => {
 
 export const signUp = async (req: Request, res: Response): Promise<void> => {
   try {
-    console.log('Signup request received:', {
-      hasPhoneNumber: !!req.body.phoneNumber,
-      hasName: !!req.body.name,
-      hasPassword: !!req.body.password
-    });
-
     // Check if user is already signed in (optional check - don't block if check fails)
     try {
       const existingAuthUser = await checkIfAuthenticated(req);
       if (existingAuthUser) {
-        console.log('User already authenticated, blocking signup');
         res.status(400).json({ 
           success: false, 
           message: 'Та аль хэдийн нэвтэрсэн байна. Гараад дахин оролдоно уу.' 
@@ -63,7 +56,6 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
       }
     } catch (authCheckError) {
       // If auth check fails, continue with signup (user is not authenticated)
-      console.log('Auth check failed (user not authenticated), proceeding with signup');
     }
 
     const { email, name, password } = req.body;
@@ -76,7 +68,6 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
       if (!name) missingFields.push('нэр');
       if (!password) missingFields.push('нууц үг');
       
-      console.log('Missing fields:', missingFields);
       res.status(400).json({ 
         success: false, 
         message: `Бүх талбарыг бөглөнө үү. Дутсан талбарууд: ${missingFields.join(', ')}` 
@@ -100,17 +91,10 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
       : undefined;
     const trimmedName = name.trim();
 
-    console.log('Normalized values:', {
-      cleanPhoneNumber,
-      hasEmail: !!normalizedEmail,
-      trimmedName,
-      passwordLength: password.length
-    });
 
     if (normalizedEmail) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(normalizedEmail)) {
-        console.log('Invalid email format:', normalizedEmail);
         res.status(400).json({ success: false, message: 'Хүчинтэй имэйл хаяг оруулна уу' });
         return;
       }
@@ -118,7 +102,6 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
 
     // Validate password: must be exactly 4 digits
     if (password.length !== 4 || !/^\d{4}$/.test(password)) {
-      console.log('Invalid password format:', password.length, /^\d{4}$/.test(password));
       res.status(400).json({ success: false, message: 'Нууц үг 4 оронтой тоо байх ёстой' });
       return;
     }
@@ -126,7 +109,6 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
     // Validate phone number format (basic check, but NOT verified)
     const phoneRegex = /^[0-9]{8,15}$/;
     if (!phoneRegex.test(cleanPhoneNumber)) {
-      console.log('Invalid phone format:', cleanPhoneNumber, 'Length:', cleanPhoneNumber.length);
       res.status(400).json({ success: false, message: 'Хүчинтэй утасны дугаар оруулна уу (8-15 оронтой тоо)' });
       return;
     }
@@ -163,12 +145,6 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
       role: 'user',
     });
 
-    console.log('Creating user:', {
-      phoneNumber: cleanPhoneNumber,
-      hasEmail: !!normalizedEmail,
-      name: trimmedName,
-      role: 'user'
-    });
 
     try {
       await user.save();
@@ -202,21 +178,9 @@ export const signUp = async (req: Request, res: Response): Promise<void> => {
     });
   } catch (error: any) {
     console.error('Sign up error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      name: error.name,
-      stack: error.stack
-    });
-    
-    // Handle other MongoDB errors (duplicate key errors should not occur since we removed unique constraints)
-    
-    // Return proper error response
-    const errorMessage = error.message || 'Бүртгэл үүсгэхэд алдаа гарлаа';
-    console.error('Returning error response:', errorMessage);
     res.status(500).json({
       success: false,
-      message: errorMessage
+      message: 'Бүртгэл үүсгэхэд алдаа гарлаа'
     });
   }
 };
@@ -276,15 +240,10 @@ export const signIn = async (req: Request, res: Response): Promise<void> => {
       },
     });
   } catch (error: any) {
-    console.error('❌ Sign in error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      name: error.name
-    });
+    console.error('Sign in error:', error);
     res.status(500).json({
       success: false,
-      message: error.message || 'Нэвтрэхэд алдаа гарлаа'
+      message: 'Нэвтрэхэд алдаа гарлаа'
     });
   }
 };

@@ -33,10 +33,23 @@ export const createOrder = async (req: Request | AuthRequest, res: Response): Pr
       return;
     }
 
-    if (!items || items.length === 0) {
+    if (!Array.isArray(items) || items.length === 0) {
       await session.abortTransaction();
       session.endSession();
       res.status(400).json({ success: false, message: 'Сагс хоосон байна' });
+      return;
+    }
+
+    const hasInvalidItem = items.some((item: any) =>
+      !item ||
+      !mongoose.isValidObjectId(item.productId) ||
+      !Number.isInteger(item.quantity) ||
+      item.quantity < 1
+    );
+    if (hasInvalidItem) {
+      await session.abortTransaction();
+      session.endSession();
+      res.status(400).json({ success: false, message: 'Сагсны мэдээлэл буруу байна' });
       return;
     }
 
@@ -50,6 +63,13 @@ export const createOrder = async (req: Request | AuthRequest, res: Response): Pr
     let total = 0;
     const orderItems = [];
     const productsToUpdate: Array<{ product: any; newStock: number }> = [];
+
+    // Total quantity per product across all lines, so repeated lines (e.g. different sizes)
+    // can't each pass the stock check against the same unreduced stock.
+    const requestedQuantities = new Map<string, number>();
+    for (const item of items) {
+      requestedQuantities.set(item.productId, (requestedQuantities.get(item.productId) || 0) + item.quantity);
+    }
 
     // Optimize: Fetch all products at once instead of one by one
     const productIds = items.map((item: { productId: string; quantity: number; size?: string }) => item.productId);
@@ -70,7 +90,7 @@ export const createOrder = async (req: Request | AuthRequest, res: Response): Pr
       }
 
       // Check stock with lock (within transaction)
-      if (product.stock < item.quantity) {
+      if (product.stock < requestedQuantities.get(item.productId)!) {
         await session.abortTransaction();
         session.endSession();
         res.status(400).json({ success: false, message: `${product.name} барааны нөөц хүрэлцэхгүй байна` });
@@ -86,12 +106,12 @@ export const createOrder = async (req: Request | AuthRequest, res: Response): Pr
         price: product.price,
         size: item.size
       });
+    }
 
-      // Store product and new stock for batch update
-      productsToUpdate.push({
-        product,
-        newStock: product.stock - item.quantity
-      });
+    // One stock update per product
+    for (const [productId, quantity] of requestedQuantities) {
+      const product = productMap.get(productId)!;
+      productsToUpdate.push({ product, newStock: product.stock - quantity });
     }
 
     const generateUniqueOrderCode = async (): Promise<string> => {

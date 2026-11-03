@@ -44,11 +44,8 @@ const corsOptions = {
     // Allow requests with no origin (curl, mobile apps)
     if (!origin) return callback(null, true);
 
-    if (isTrustedOrigin(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    // Reject without throwing; an Error here would surface as a 500 from errorHandler.
+    callback(null, isTrustedOrigin(origin));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
